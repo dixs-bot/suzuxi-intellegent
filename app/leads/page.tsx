@@ -1,0 +1,9 @@
+import { demoLeads } from "@/lib/demo";
+import { supabase } from "@/lib/supabase";
+import { LeadForm } from "@/components/LeadForm";
+export const dynamic="force-dynamic";
+export default async function LeadsPage(){
+ let leads:any[]=demoLeads;
+ if(supabase){const {data}=await supabase.from("leads").select("*").order("created_at",{ascending:false});if(data)leads=data;}
+ return <div className="mx-auto max-w-7xl space-y-5"><div><h1 className="text-2xl font-bold">Manajemen prospek</h1><p className="mt-1 text-sm text-muted">Kelola calon pembeli dan persetujuan komunikasi.</p></div><LeadForm/><div className="overflow-hidden rounded-2xl border border-line bg-white shadow-soft"><div className="border-b border-line p-4 font-semibold">Daftar prospek ({leads.length})</div><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-soft text-xs text-muted"><tr>{["Nama","Kota","Sumber","Minat unit","Skor","Persetujuan","Status"].map(x=><th key={x} className="px-4 py-3 font-medium">{x}</th>)}</tr></thead><tbody>{leads.map((l:any)=><tr key={l.id} className="border-t border-line"><td className="px-4 py-3 font-semibold">{l.full_name}</td><td className="px-4 py-3">{l.city||"—"}</td><td className="px-4 py-3">{l.source||"—"}</td><td className="px-4 py-3">{l.vehicle_interest||"—"}</td><td className="px-4 py-3">{l.lead_score??0}</td><td className="px-4 py-3">{l.consent_to_contact?"Disetujui":"Belum"}</td><td className="px-4 py-3">{l.lead_status||"new"}</td></tr>)}</tbody></table></div></div></div>;
+}

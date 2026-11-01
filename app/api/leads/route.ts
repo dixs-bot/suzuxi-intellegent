@@ -1,0 +1,7 @@
+import {NextResponse} from "next/server";
+import {z} from "zod";
+import {supabase} from "@/lib/supabase";
+import {scoreLead} from "@/lib/scoring";
+const schema=z.object({full_name:z.string().min(2).max(120),phone:z.string().max(30).optional().nullable(),city:z.string().max(80).optional(),source:z.string().max(80).optional(),vehicle_interest:z.string().max(100).optional(),consent_to_contact:z.boolean().optional()});
+export async function GET(){if(!supabase)return NextResponse.json({data:[],demo:true});const {data,error}=await supabase.from("leads").select("*").order("created_at",{ascending:false}).limit(200);if(error)return NextResponse.json({error:error.message},{status:500});return NextResponse.json({data});}
+export async function POST(req:Request){try{const parsed=schema.safeParse(await req.json());if(!parsed.success)return NextResponse.json({error:"Data tidak valid",details:parsed.error.flatten()},{status:400});const p=parsed.data;const scored=scoreLead({contact_consent:p.consent_to_contact});const row={...p,lead_score:scored.score,lead_status:"new",consent_to_contact:!!p.consent_to_contact};if(!supabase)return NextResponse.json({data:{...row,id:crypto.randomUUID()},demo:true,notice:"Supabase belum dikonfigurasi."},{status:201});const {data,error}=await supabase.from("leads").insert(row).select().single();if(error)return NextResponse.json({error:error.message},{status:500});return NextResponse.json({data},{status:201});}catch{return NextResponse.json({error:"Permintaan tidak dapat diproses."},{status:400});}}
