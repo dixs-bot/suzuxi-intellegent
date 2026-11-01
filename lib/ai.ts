@@ -1,14 +1,66 @@
-import OpenAI from "openai";
-const client = process.env.OPENAI_API_KEY ? new OpenAI({apiKey:process.env.OPENAI_API_KEY}) : null;
-export async function generateSalesReply(message:string, context:string[] = []) {
- if(!client) return {reply:"Terima kasih sudah menghubungi kami. Saya asisten virtual Suzuki. Saya belum terhubung ke layanan AI, tetapi tim sales dapat membantu Anda. Apakah Anda sedang mencari mobil untuk kebutuhan pribadi atau keluarga?",configured:false};
- const completion = await client.chat.completions.create({
-  model:process.env.OPENAI_MODEL || "gpt-4.1-mini",
-  temperature:0.4,
-  messages:[
-   {role:"system",content:`Anda adalah asisten virtual tim penjualan Suzuki di Bandung. Selalu jujur bahwa Anda AI. Gunakan Bahasa Indonesia yang ramah, singkat dan tidak memaksa. Bantu memahami kebutuhan dan model yang diminati. Jangan mengarang harga, diskon, stok, cicilan, DP, promo, spesifikasi yang tidak ada di sumber, atau persetujuan kredit. Jika ditanya hal yang belum ada datanya, katakan perlu dikonfirmasi sales manusia. Jangan meminta atau menyimpan data pribadi yang tidak diperlukan. Minta persetujuan eksplisit sebelum meneruskan nomor/kontak kepada sales. Konteks terverifikasi: ${context.join("\\n") || "Belum ada katalog atau daftar harga terverifikasi."}`},
-   {role:"user",content:message}
-  ]
- });
- return {reply:completion.choices[0]?.message?.content || "Maaf, saya belum dapat menjawab. Tim sales kami dapat membantu.",configured:true};
+
+import { GoogleGenAI } from "@google/genai";
+
+const apiKey = process.env.GEMINI_API_KEY;
+
+const client = apiKey
+  ? new GoogleGenAI({ apiKey })
+  : null;
+
+export async function generateSalesReply(
+  message: string,
+  context: string[] = []
+) {
+  if (!client) {
+    return {
+      reply:
+        "Terima kasih sudah menghubungi kami. Saya asisten virtual Suzuki. Saat ini layanan AI belum dikonfigurasi. Tim sales kami siap membantu Anda.",
+      configured: false,
+    };
+  }
+
+  const model =
+    process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+  const systemInstruction = `
+Anda adalah asisten virtual tim penjualan Suzuki di Bandung.
+
+ATURAN UTAMA:
+1. Selalu jujur bahwa Anda adalah AI.
+2. Gunakan Bahasa Indonesia yang ramah, profesional,
+   singkat, dan tidak memaksa.
+3. Bantu pelanggan memahami kebutuhan kendaraan.
+4. Tanyakan kebutuhan pelanggan secara bertahap.
+5. Jangan mengarang harga, diskon, stok, cicilan,
+   DP, promo, spesifikasi, atau persetujuan kredit.
+6. Jika informasi belum tersedia, sampaikan bahwa
+   tim sales manusia perlu mengonfirmasi.
+7. Jangan meminta data pribadi yang tidak diperlukan.
+8. Minta persetujuan eksplisit sebelum meneruskan
+   nomor atau kontak pelanggan kepada sales.
+
+KONTEKS TERVERIFIKASI:
+${
+  context.length > 0
+    ? context.join("\n")
+    : "Belum ada katalog atau daftar harga terverifikasi."
+}
+`;
+
+  const response = await client.models.generateContent({
+    model,
+    contents: message,
+    config: {
+      systemInstruction,
+      temperature: 0.4,
+      maxOutputTokens: 800,
+    },
+  });
+
+  return {
+    reply:
+      response.text ||
+      "Maaf, saya belum dapat menjawab. Tim sales kami dapat membantu.",
+    configured: true,
+  };
 }
