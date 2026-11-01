@@ -1,0 +1,11 @@
+import {NextResponse} from "next/server";
+import {createHmac,timingSafeEqual} from "crypto";
+export async function GET(req:Request){const u=new URL(req.url);if(u.searchParams.get("hub.mode")==="subscribe"&&u.searchParams.get("hub.verify_token")===process.env.WHATSAPP_VERIFY_TOKEN){return new Response(u.searchParams.get("hub.challenge")||"",{status:200});}return NextResponse.json({error:"Verification failed"},{status:403});}
+export async function POST(req:Request){
+ const raw=await req.text();const signature=req.headers.get("x-hub-signature-256");const secret=process.env.META_APP_SECRET;
+ if(secret){if(!signature)return NextResponse.json({error:"Webhook signature missing"},{status:401});const expected="sha256="+createHmac("sha256",secret).update(raw).digest("hex");const a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))return NextResponse.json({error:"Invalid signature"},{status:401});}
+ else if(process.env.NODE_ENV==="production")return NextResponse.json({error:"Webhook signature secret required"},{status:401});
+ let body:any;try{body=JSON.parse(raw)}catch{return NextResponse.json({error:"Invalid JSON"},{status:400});}
+ // TODO: map verified incoming WhatsApp events to conversations/messages and consent workflow.
+ return NextResponse.json({received:true,processed:false,object:body.object||null});
+}
