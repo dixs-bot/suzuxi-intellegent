@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "worker": "tsx worker/index.ts"
+    "lint": "tsc --noEmit",
+    "worker": "tsx worker/index.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

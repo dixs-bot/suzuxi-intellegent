@@ -18,7 +18,11 @@ export function LoginForm({searchParams}:{searchParams:Promise<{setup?:string;ne
   if(profileError||!profile||!["admin","sales","viewer"].includes(profile.role)){
    await supabase.auth.signOut(); throw new Error("Akun belum memiliki profil akses. Hubungi administrator.");
   }
-  router.replace(nextPath.startsWith("/")?nextPath:"/");router.refresh();
+  const safeNextPath =
+    nextPath.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\")
+      ? nextPath
+      : "/";
+  router.replace(safeNextPath);router.refresh();
  }catch(err){setError(err instanceof Error?err.message:"Login gagal.");}finally{setBusy(false);}}
  return <div className="grid min-h-screen place-items-center bg-[#f4f7fb] p-4"><div className="w-full max-w-md rounded-3xl border border-line bg-white p-7 shadow-soft">
   <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand text-white"><Bot size={28}/></div>
