@@ -11,7 +11,9 @@ export async function GET() {
       "viewer",
     ]);
 
-    if (response) return response;
+    if (response) {
+      return response;
+    }
 
     const { data, error } = await context.supabase
       .from("knowledge_documents")
@@ -20,15 +22,20 @@ export async function GET() {
 
     if (error) {
       console.error("[API knowledge GET]", error);
+
       return NextResponse.json(
         { error: "Gagal mengambil dokumen pengetahuan." },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, data: data ?? [] });
+    return NextResponse.json({
+      success: true,
+      data: data ?? [],
+    });
   } catch (error) {
     console.error("[API knowledge GET]", error);
+
     return NextResponse.json(
       { error: "Terjadi kesalahan pada server." },
       { status: 500 }
